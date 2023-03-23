@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -53,6 +54,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import org.apache.cassandra.Util;
 import org.apache.cassandra.auth.AuthKeyspace;
 import org.apache.cassandra.config.Config.DiskFailurePolicy;
@@ -111,6 +118,9 @@ public class DirectoriesTest
     private static Set<TableMetadata> CFM;
     private static Map<String, List<File>> sstablesByTableName;
 
+    private Logger logger;
+    ListAppender<ILoggingEvent> listAppender;
+
     @Parameterized.Parameter
     public SSTableId.Builder<? extends SSTableId> idBuilder;
 
@@ -152,6 +162,7 @@ public class DirectoriesTest
 
         // Create two fake data dir for tests, one using CF directories, one that do not.
         createTestFiles();
+        tailLogs();
     }
 
     @AfterClass
@@ -160,6 +171,11 @@ public class DirectoriesTest
         tempDataDir.deleteRecursive();
     }
 
+    @After
+    public void afterTest()
+    {
+        detachLogger();
+    }
     private static DataDirectory[] toDataDirectories(File location)
     {
         return new DataDirectory[] { new DataDirectory(location) };
@@ -893,6 +909,22 @@ public class DirectoriesTest
         }
     }
 
+    private void detachLogger()
+    {
+        logger.detachAppender(listAppender);
+    }
+    private void tailLogs()
+    {
+        logger = (Logger) LoggerFactory.getLogger(Directories.class);
+
+        // create and start a ListAppender
+        listAppender = new ListAppender<>();
+        listAppender.start();
+
+        // add the appender to the logger
+        logger.addAppender(listAppender);
+
+    }
     @Test
     public void testHasAvailableSpace()
     {
@@ -918,6 +950,50 @@ public class DirectoriesTest
 
             fs1.usableSpace = 19;
             assertFalse(Directories.hasDiskSpaceForCompactionsAndStreams(writes));
+
+            writes.put(fs2, 20L*1024*1024+9);
+            fs2.usableSpace = 20L*1024*1024-9;
+            assertFalse(Directories.hasDiskSpaceForCompactionsAndStreams(writes));
+
+            // messages from different levels seem to appear out of order?
+            // to experience consistency, we can look at them separately
+            ArrayList<ILoggingEvent> debug = new ArrayList<>();
+            ArrayList<ILoggingEvent> warn = new ArrayList<>();
+            for(ILoggingEvent event : listAppender.list)
+            {
+                if(event.getLevel()== Level.DEBUG)
+                    debug.add(event);
+                else if (event.getLevel()==Level.WARN)
+                {
+                    warn.add(event);
+                }
+            }
+
+            for(ILoggingEvent e : debug)
+            {
+                System.err.println("HENRIK      " + e.getFormattedMessage());
+            }
+            for(ILoggingEvent e : warn)
+            {
+                System.err.println("HENRIK      " + e.getFormattedMessage());
+            }
+
+            String logMsg = "has 30 bytes available, checking if we can write 20 bytes";
+            assertTrue(debug.get(0).getFormattedMessage().endsWith(logMsg));
+            assertTrue(debug.get(1).getFormattedMessage().endsWith(logMsg));
+            assertTrue(debug.get(2).getFormattedMessage().endsWith(logMsg));
+            logMsg = "has 19 bytes available, checking if we can write 20 bytes";
+            assertTrue(debug.get(3).getFormattedMessage().endsWith(logMsg));
+            logMsg = "has 19 bytes available, checking if we can write 20 bytes";
+            assertTrue(debug.get(3).getFormattedMessage().endsWith(logMsg));
+
+            logMsg = "has only 0 MiB available, but 0 MiB is needed";
+            assertTrue(warn.get(0).getFormattedMessage().endsWith(logMsg));
+            assertEquals(Level.WARN, warn.get(0).getLevel());
+
+            logMsg = "has only 20 MiB available, but 20 MiB is needed";
+            assertTrue(warn.get(2).getFormattedMessage().endsWith(logMsg));
+            assertEquals(Level.WARN, warn.get(2).getLevel());
         }
         finally
         {

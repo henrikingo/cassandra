@@ -191,7 +191,7 @@ public class CompactionTaskTest
             cfs.getTracker().removeUnsafe(sstables);
         }
     }
-    
+
     @Test
     public void testMajorCompactTask()
     {
