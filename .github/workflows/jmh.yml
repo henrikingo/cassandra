@@ -23,13 +23,3 @@ jobs:
           export JAVA_HOME=/opt/hostedtoolcache/Java_Adopt_jdk/11.0.27-6/x64
           ant microbench -Dbenchmark.name=SampleBench
 
-      - name: Analyze benchmark results with Nyrkiö
-        uses: henrikingo/change-detection@HEAD
-        with:
-          tool: 'jmh'
-          output-file-path: build/test/jmh-result.json
-
-          # Pick up your token at https://nyrkio.com/docs/getting-started
-          # Then head to https://github.com/USER_OR_ORG/PROJECT/settings/secrets/actions
-          # Store the token you just created as a Repository secret. We'll use the variable name `secrets.NYRKIO_JWT_TOKEN` for it below.
-          nyrkio-token: ${{ secrets.NYRKIO_JWT_TOKEN }}
