@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - trunk
+  pull:
+    branches:
+      - trunk
+      - jmh-demo
 
 jobs:
   benchmark:
@@ -23,3 +27,11 @@ jobs:
           export JAVA_HOME=/opt/hostedtoolcache/Java_Adopt_jdk/11.0.27-6/x64
           ant microbench -Dbenchmark.name=SampleBench
 
+      - name: Analyze benchmark results with Nyrkiö
+        uses: nyrkio/change-detection@v2
+        with:
+          tool: 'jmh'
+          output-file-path: build/test/jmh-result.json
+          name: jmhdemo
+          # Pick up your token at https://nyrkio.com/docs/getting-started
+          nyrkio-token: ${{ secrets.NYRKIO_JWT_TOKEN }}
