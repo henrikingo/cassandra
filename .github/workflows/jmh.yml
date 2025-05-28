@@ -3,6 +3,10 @@ on:
   push:
     branches:
       - trunk
+  pull:
+    branches:
+      - trunk
+      - jmh-demo
 
 jobs:
   benchmark:
@@ -24,12 +28,10 @@ jobs:
           ant microbench -Dbenchmark.name=SampleBench
 
       - name: Analyze benchmark results with Nyrkiö
-        uses: henrikingo/change-detection@HEAD
+        uses: nyrkio/change-detection@v2
         with:
           tool: 'jmh'
           output-file-path: build/test/jmh-result.json
-
+          name: jmhdemo
           # Pick up your token at https://nyrkio.com/docs/getting-started
-          # Then head to https://github.com/USER_OR_ORG/PROJECT/settings/secrets/actions
-          # Store the token you just created as a Repository secret. We'll use the variable name `secrets.NYRKIO_JWT_TOKEN` for it below.
           nyrkio-token: ${{ secrets.NYRKIO_JWT_TOKEN }}
