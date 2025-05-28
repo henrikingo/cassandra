@@ -24,7 +24,7 @@ jobs:
           ant microbench -Dbenchmark.name=SampleBench
 
       - name: Analyze benchmark results with Nyrkiö
-        uses: nyrkio/change-detection@v2
+        uses: henrikingo/change-detection@HEAD
         with:
           tool: 'jmh'
           output-file-path: build/test/jmh-result.json
