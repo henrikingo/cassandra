@@ -31,7 +31,7 @@ jobs:
         uses: nyrkio/change-detection@v2
         with:
           tool: 'jmh'
-          output-file-path: build/test/jmh-results.json
+          output-file-path: build/test/jmh-result.json
           name: jmhdemo
           # Pick up your token at https://nyrkio.com/docs/getting-started
           nyrkio-token: ${{ secrets.NYRKIO_JWT_TOKEN }}
