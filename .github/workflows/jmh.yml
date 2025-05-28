@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - trunk
-  pull:
+  pull_request:
     branches:
       - trunk
       - jmh-demo
