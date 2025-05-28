@@ -27,7 +27,7 @@ jobs:
         uses: nyrkio/change-detection@v2
         with:
           tool: 'jmh'
-          output-file-path: work/cassandra/cassandra/build/test/jmh-result.json
+          output-file-path: build/test/jmh-result.json
 
           # Pick up your token at https://nyrkio.com/docs/getting-started
           # Then head to https://github.com/USER_OR_ORG/PROJECT/settings/secrets/actions
